@@ -82,6 +82,13 @@
             border: 1px solid rgba(212, 175, 55, 0.25);
         }
 
+        /* Estilo Sello Artesanal Agotado */
+        .sello-agotado {
+            border: 3px dashed #ef4444;
+            background: rgba(15, 23, 42, 0.88);
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -280,6 +287,13 @@
     </div>
 
     <script>
+        // =========================================================================
+        // 🔴 PANEL RÁPIDO DE CONTROL DE AGOTADOS:
+        // Solo coloca aquí dentro los números de ID de los muñecos que se vayan vendiendo.
+        // Ejemplo actual: el Tren es id: 14. Si luego vendes el 5 y el 8, pones: [14, 5, 8]
+        // =========================================================================
+        const AGOTADOS = [14]; 
+
         const products = [
             {
                 id: 10,
@@ -488,15 +502,19 @@
                 const imgListJson = JSON.stringify(imgList).replace(/"/g, '&quot;');
                 
                 const isFeatured = Boolean(product.featured);
-                const cardBorder = isFeatured 
-                    ? 'ring-2 ring-navidad-gold shadow-[0_0_25px_rgba(212,175,55,0.35)] relative scale-[1.02]' 
-                    : 'border border-slate-200';
+                // Comprueba si el ID del muñeco está en la lista de AGOTADOS
+                const isSoldOut = AGOTADOS.includes(product.id);
+                
+                const cardBorder = isSoldOut
+                    ? 'border-2 border-red-900/60 opacity-95'
+                    : (isFeatured 
+                        ? 'ring-2 ring-navidad-gold shadow-[0_0_25px_rgba(212,175,55,0.35)] relative scale-[1.02]' 
+                        : 'border border-slate-200');
                 
                 const badgeStyle = isFeatured
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold shadow-lg animate-pulse border border-yellow-200'
                     : 'bg-navidad-red text-white font-bold';
 
-                // Indicador visible permanente para celular (estilo galería)
                 const hasMultiple = imgList.length > 1;
                 const hasVideo = imgList.some(item => item.endsWith('.mp4'));
                 const galleryBadgeText = hasVideo 
@@ -509,14 +527,29 @@
                         <!-- Contenedor de Imagen -->
                         <div class="relative h-72 overflow-hidden bg-slate-900 flex items-center justify-center p-2 cursor-pointer group" onclick="openImageModal(${imgListJson}, '${product.name.replace(/'/g, "\\'")}')">
                             
-                            <img src="${product.image}?v=2" alt="${product.name}" class="w-full h-full object-contain rounded-2xl group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/400x300/f8fafc/1e293b?text=${encodeURIComponent(product.name)}'">
+                            <!-- Foto con filtro si está agotado -->
+                            <img src="${product.image}?v=2" alt="${product.name}" class="w-full h-full object-contain rounded-2xl group-hover:scale-105 transition-transform duration-500 ${isSoldOut ? 'brightness-75 contrast-90' : ''}" onerror="this.src='https://via.placeholder.com/400x300/f8fafc/1e293b?text=${encodeURIComponent(product.name)}'">
                             
+                            <!-- SELLO CENTRAL DE AGOTADO (OPCIÓN 2) -->
+                            ${isSoldOut ? `
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                <div class="sello-agotado rounded-2xl p-3 px-5 text-center transform -rotate-12 border-2 border-red-500 shadow-2xl">
+                                    <span class="block text-red-500 font-extrabold tracking-widest text-lg sm:text-xl uppercase drop-shadow">
+                                        🎅 ¡AGOTADO! 🎄
+                                    </span>
+                                    <span class="block text-yellow-300 font-serif text-[11px] sm:text-xs tracking-wider uppercase font-semibold mt-0.5">
+                                        Se fue a su nuevo hogar
+                                    </span>
+                                </div>
+                            </div>
+                            ` : ''}
+
                             <!-- Etiqueta de Categoría (Izquierda Arriba) -->
-                            <span class="absolute top-4 left-4 ${badgeStyle} text-xs px-3 py-1.5 rounded-full shadow-md z-10 flex items-center gap-1">
+                            <span class="absolute top-4 left-4 ${badgeStyle} text-xs px-3 py-1.5 rounded-full shadow-md z-10 flex items-center gap-1 ${isSoldOut ? 'opacity-50' : ''}">
                                 ${product.badge}
                             </span>
 
-                            <!-- Bloque Superior Derecho: Contador y "Toca para ver más" alineados verticalmente -->
+                            <!-- Bloque Superior Derecho -->
                             <div class="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5">
                                 ${hasMultiple ? `
                                 <span class="bg-slate-950/85 backdrop-blur-md text-navidad-lightgold text-xs font-semibold px-3 py-1.5 rounded-full border border-navidad-gold/50 shadow-lg flex items-center gap-1.5">
@@ -529,7 +562,7 @@
                                 </span>
                             </div>
 
-                            <!-- Medidas (Derecha Abajo, completamente despejado) -->
+                            <!-- Medidas -->
                             <span class="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-md text-navidad-lightgold text-xs px-3 py-1 rounded-full font-medium border border-navidad-gold/30 z-10">
                                 <i class="fa-solid fa-ruler-vertical mr-1"></i>${product.dimensions}
                             </span>
@@ -544,16 +577,24 @@
                             
                             <div class="pt-2 flex items-baseline justify-between">
                                 <span class="text-xs text-slate-500 uppercase font-semibold">Precio Artesanal</span>
-                                <span class="text-2xl font-bold text-navidad-darkred">$${product.price.toLocaleString('es-CO')} COP</span>
+                                <span class="text-2xl font-bold ${isSoldOut ? 'text-slate-500 line-through' : 'text-navidad-darkred'}">$${product.price.toLocaleString('es-CO')} COP</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Botón Dinámico -->
                     <div class="p-6 pt-0">
+                        ${isSoldOut ? `
+                        <button onclick="directWhatsApp(${product.id})" class="w-full bg-slate-800 hover:bg-slate-700 text-yellow-300 py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center space-x-2 transition-all border border-yellow-400/40">
+                            <i class="fa-brands fa-whatsapp text-xl text-emerald-400"></i>
+                            <span>Agotado • Consultar por encargo 💬</span>
+                        </button>
+                        ` : `
                         <button onclick="directWhatsApp(${product.id})" class="w-full ${isFeatured ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center space-x-2 transition-all">
                             <i class="fa-brands fa-whatsapp text-xl"></i>
                             <span>Pedir por WhatsApp 💬</span>
                         </button>
+                        `}
                     </div>
                 </div>
             `}).join('');
@@ -561,7 +602,14 @@
 
         function directWhatsApp(productId) {
             const product = products.find(p => p.id === productId);
-            const message = `Hola!%20Me%20interesa%20comprar%20el%20muñeco:%20*${encodeURIComponent(product.name)}*%20($${product.price.toLocaleString('es-CO')}%20COP).%20¿Tienen%20disponibilidad?`;
+            const isSoldOut = AGOTADOS.includes(productId);
+            
+            let message = "";
+            if (isSoldOut) {
+                message = `Hola!%20Vi%20en%20el%20catálogo%20que%20el%20muñeco%20*${encodeURIComponent(product.name)}*%20está%20agotado.%20¿Es%20posible%20mandarlo%20a%20hacer%20bajo%20pedido?%20🎅🎁`;
+            } else {
+                message = `Hola!%20Me%20interesa%20comprar%20el%20muñeco:%20*${encodeURIComponent(product.name)}*%20($${product.price.toLocaleString('es-CO')}%20COP).%20¿Tienen%20disponibilidad?`;
+            }
             window.open(`https://wa.me/573158749206?text=${message}`, '_blank');
         }
 
